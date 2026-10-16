@@ -1,0 +1,12 @@
+import {execFile} from 'node:child_process';import {promisify} from 'node:util';import {existsSync,promises as fs} from 'node:fs';import path from 'node:path';import {validateRemoteOrigin} from '../companion/remote-config.js';
+const candidates=[process.env.TAILSCALE_BIN,'/Applications/Tailscale.app/Contents/MacOS/Tailscale','/usr/local/bin/tailscale','/opt/homebrew/bin/tailscale'].filter(Boolean) as string[];
+const binary=candidates.find(p=>existsSync(p))||'tailscale';const run=async(args:string[])=>{try{return (await promisify(execFile)(binary,args,{timeout:30000,maxBuffer:2*1024*1024})).stdout;}catch{throw new Error('Tailscale needs installation/sign-in or HTTPS setup. Complete those in the Mac app, then rerun npm run remote:setup.');}};
+const status=JSON.parse(await run(['status','--json']));if(status.BackendState!=='Running'||!status.Self?.DNSName)throw new Error('Sign in to Tailscale on this Mac first.');
+const dns=String(status.Self.DNSName).replace(/\.$/,'');if(!/^[a-z0-9.-]+\.ts\.net$/i.test(dns))throw new Error('Unexpected Tailscale DNS name');
+const origin=validateRemoteOrigin('https://'+dns),port=Number(process.env.PORT||3100);if(!Number.isInteger(port)||port<1024||port>65535)throw new Error('Invalid phone service port');const target=`http://127.0.0.1:${port}`;
+const previous=JSON.parse(await run(['serve','status','--json']));
+const oldHandler=previous.Web?.[dns+':443']?.Handlers?.['/'];if(oldHandler&&oldHandler.Proxy!==target)throw new Error('Another service is already served at this HTTPS root. Refusing to replace it.');
+await run(['serve','--bg','--https=443',target]);const config=JSON.parse(await run(['serve','status','--json']));
+if(config.Web?.[dns+':443']?.Handlers?.['/']?.Proxy!==target||!config.TCP?.['443']?.HTTPS)throw new Error('Cannot verify the Serve HTTPS proxy; remote origin was not saved.');
+const dir=path.resolve('.remote-mac');await fs.mkdir(dir,{recursive:true,mode:0o700});const file=path.join(dir,'remote-access.json');await fs.writeFile(file,JSON.stringify({origin,provider:'tailscale-serve',target},null,2),{mode:0o600});
+console.log(`Private phone URL: ${origin}\nVerified proxy: ${target}\nRestart companion to load this HTTPS origin. Install Tailscale on the phone and sign in to the same tailnet. Never forward ports 3101 or 27017.`);

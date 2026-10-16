@@ -1,0 +1,41 @@
+services:
+  mongo:
+    image: mongo:8.0.34
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ADMIN_PASSWORD:?Set a random hex admin password}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?Set a different random hex app password}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/app.js:ro
+  relay:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    environment:
+      RELAY_ORIGIN: https://${DOMAIN:?Set your domain}
+      RELAY_TRUST_PROXY: "1"
+      MONGODB_URI: mongodb://remote_app:${MONGO_APP_PASSWORD:?Set app password}@mongo:27017/remote_mac_relay?authSource=remote_mac_relay
+      RELAY_DATABASE: remote_mac_relay
+    depends_on:
+      - mongo
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set your domain}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - relay
+volumes:
+  mongo-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,4 @@
+import {z} from 'zod';
+const Question=z.object({id:z.string().max(100),question:z.string().max(6000),options:z.array(z.object({label:z.string().max(500),description:z.string().max(1000).optional()})).max(30).optional()});
+export const DeviceEvent=z.object({type:z.literal('event'),turnId:z.string().uuid(),eventId:z.string().uuid(),kind:z.enum(['progress','assistant','prompt','resolved','thread','finished']),text:z.string().max(20000).optional(),prompt:z.object({id:z.string().uuid(),title:z.string().max(200),questions:z.array(Question).max(20)}).optional(),status:z.enum(['completed','failed','stopped']).optional()}).strict();
+export const Task=z.object({type:z.literal('task'),turnId:z.string().uuid(),chatId:z.string().uuid(),text:z.string().min(1).max(2000),threadId:z.string().nullable(),expiresAt:z.number()}).strict();

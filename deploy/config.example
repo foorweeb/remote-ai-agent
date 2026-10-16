@@ -1,0 +1,3 @@
+DOMAIN=remote.your-domain.example
+MONGO_ADMIN_PASSWORD=replace_with_64_random_hex_characters
+MONGO_APP_PASSWORD=replace_with_a_different_64_random_hex_password

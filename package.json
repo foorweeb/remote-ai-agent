@@ -1,0 +1,71 @@
+{
+  "name": "remote-ai-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx companion/server.ts",
+    "build": "next build",
+    "start": "NODE_ENV=production tsx companion/server.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "test:pairing": "tsx scripts/pairing-smoke.ts",
+    "migrate:mongo": "tsx scripts/migrate-mongodb.ts",
+    "mongo:local": "tsx scripts/local-mongo.ts",
+    "test:mongo": "MONGODB_TEST_URI=mongodb://127.0.0.1:27017 tsx --test tests/mongodb.test.ts",
+    "mongo:install": "python3 scripts/install-mongo.py",
+    "remote:setup": "tsx scripts/setup-remote.ts",
+    "relay": "tsx relay/main.ts",
+    "desktop:build": "node scripts/build-desktop.mjs",
+    "desktop": "npm run desktop:build && electron .",
+    "desktop:pack": "npm run desktop:build && electron-builder --mac --dir",
+    "relay:test": "MONGODB_TEST_URI=mongodb://127.0.0.1:27017 tsx --test tests/relay.test.ts"
+  },
+  "dependencies": {
+    "mongodb": "^7.7.0",
+    "next": "^16.4.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tsx": "^4.20.0",
+    "ws": "^8.22.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/ws": "^8.18.2",
+    "electron": "^44.8.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "desktop-build/main.cjs",
+  "build": {
+    "appId": "dev.remoteagent.companion",
+    "productName": "Remote Desktop Companion",
+    "directories": {
+      "output": "outputs/desktop",
+      "app": "desktop-build"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "ui/**/*",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "identity": null
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "description": "Remote desktop companion and authenticated cloud relay preview",
+  "author": "Remote Desktop"
+}

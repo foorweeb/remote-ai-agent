@@ -1,0 +1,2 @@
+import {startRelay} from './server.js';import {RelayStore} from './store.js';
+const port=Number(process.env.RELAY_PORT||3200),host=process.env.RELAY_HOST||'127.0.0.1',origin=process.env.RELAY_ORIGIN||`http://127.0.0.1:${port}`;const store=new RelayStore();await store.connect();await store.interrupted();const relay=await startRelay({store,port,host,origin,frontend:true});console.log(`Relay phone interface: ${origin}/remote`);for(const signal of ['SIGINT','SIGTERM'] as const)process.once(signal,()=>{void relay.close().finally(()=>process.exit(0));});
